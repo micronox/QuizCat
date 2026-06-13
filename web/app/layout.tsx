@@ -13,8 +13,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "QuizCat",
-  description: "Timed CCAT-style multiple-choice practice tests.",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ??
+      "https://quizcat-web-production.up.railway.app"
+  ),
+  title: "CCat Leash Harness",
+  description: "Governed CCAT-style question generation and practice tests.",
+  openGraph: {
+    title: "CCat Leash Harness",
+    description: "If I Fits, I Harness Sits.",
+    images: ["/brand/ccat-leash-harness.jpg"],
+  },
 };
 
 export default function RootLayout({

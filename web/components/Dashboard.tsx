@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { TestSummary } from "@/lib/types";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function Dashboard({ tests }: { tests: TestSummary[] }) {
   const [selectedId, setSelectedId] = useState<number | null>(tests[0]?.id ?? null);
@@ -10,7 +11,8 @@ export default function Dashboard({ tests }: { tests: TestSummary[] }) {
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-6 py-12">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight">QuizCat</h1>
+        <BrandLogo priority />
+        <h1 className="mt-5 text-3xl font-bold tracking-tight">QuizCat</h1>
         <p className="mt-1 text-sm text-zinc-500">
           Timed, CCAT-style multiple-choice practice tests.
         </p>
