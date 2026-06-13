@@ -1,134 +1,132 @@
-# QuizCat Textual Railway Deployment Handoff
+# QuizCat Operations Handoff
 
-## Goal
+## Ownership
 
-Deploy the existing Textual terminal application as a browser-accessible service
-on Railway using `textual-serve`.
-
-## Live Deployment
-
+- Canonical GitHub repository: https://github.com/micronox/QuizCat
+- Default branch: `main`
+- Railway workspace: `micronox's Projects`
 - Railway project: `quizcat-textual`
-- Public URL: https://quizcat-textual-production.up.railway.app
-- Railway dashboard:
-  https://railway.com/project/ffa41b8d-4009-411b-ad20-0130c9c2328a/service/8d906dbe-9dcd-4f1c-939b-1ee7df612d0c
-- Deployment result: `SUCCESS`
-- Public endpoint verification: HTTP `200`
+- Railway project ID: `ffa41b8d-4009-411b-ad20-0130c9c2328a`
 
-Railway currently assigns port `8080` through its `PORT` environment variable.
-Local development continues to default to `http://localhost:8000`.
+The Railway project contains two applications and one shared Postgres database.
+The services must be deployed separately because they use different project
+roots and start commands.
 
-## Changes Made
+## Live Services
 
-### `serve.py`
+| Resource | Public URL | Start command |
+| --- | --- | --- |
+| `quizcat-web` | https://quizcat-web-production.up.railway.app | `npm run start` from `web/` |
+| `quizcat-textual` | https://quizcat-textual-production.up.railway.app | `python serve.py` from repository root |
+| `Postgres` | Private Railway resource | Railway-managed PostgreSQL |
 
-Updated the Textual browser-server entrypoint to:
+Both public services use `/` as their Railway health-check path.
 
-- Read `HOST`, defaulting to `0.0.0.0`
-- Read Railway's injected `PORT`, defaulting to `8000`
-- Launch `main.py` with the active Python interpreter
-- Set the browser title to `QuizCat`
+## Current Verification
 
-Current relevant behavior:
+Verified on June 13, 2026:
 
-```python
-host = os.environ.get("HOST", "0.0.0.0")
-port = int(os.environ.get("PORT", "8000"))
+- Both Railway app services and Postgres report `SUCCESS`.
+- Both public home pages return HTTP `200`.
+- Next.js routes `/api/tests`, `/quiz/1`, `/stats`, and a question image return
+  HTTP `200`.
+- Postgres contains 400 questions, 1,952 choices, 8 tests, and 400
+  test-question links.
+- `npm run lint`, `npm run build`, and all 19 Python tests pass locally.
+- GitHub Actions CI covers the Python tests and Next.js lint/build on pushes and
+  pull requests.
 
-server = Server(
-    f'"{sys.executable}" main.py',
-    host=host,
-    port=port,
-    title="QuizCat",
-)
-```
+## Safe Deployment Commands
 
-### `railway.toml`
+The Railway CLI may be linked to either application. Always name the target
+service explicitly.
 
-Added Railway configuration-as-code:
-
-```toml
-[build]
-builder = "RAILPACK"
-
-[deploy]
-startCommand = "python serve.py"
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 10
-```
-
-### `README.md`
-
-Added instructions for:
-
-- Running the Textual browser server locally
-- Deploying it with the Railway CLI
-- Generating a public Railway domain
-
-## Verification Performed
-
-The updated server was tested locally on a temporary port:
+Deploy the Textual browser app:
 
 ```powershell
-$env:PORT = "8011"
-.\.venv\Scripts\python.exe serve.py
+railway up . --service quizcat-textual --detach
 ```
 
-The local HTTP request returned status `200`.
+Deploy the Next.js/Postgres app:
 
-Railway successfully:
-
-1. Detected Python and `uv`
-2. Installed dependencies from `uv.lock`
-3. Started the service with `python serve.py`
-4. Served the application on `0.0.0.0:$PORT`
-5. Returned HTTP `200` from the public domain
-
-Railway runtime log:
-
-```text
-Serving '"/app/.venv/bin/python" main.py' on http://0.0.0.0:8080
+```powershell
+railway up web --path-as-root --service quizcat-web --detach
 ```
 
-## Railway CLI
-
-The old Scoop Railway CLI `1.8.3` was removed because its obsolete login
-endpoint returned HTTP `404`.
-
-The current npm-installed Railway CLI is:
-
-```text
-railway 5.12.1
-```
-
-The CLI is authenticated as `larry@chaoticenigma.com`.
-
-Useful commands:
+Check status and logs:
 
 ```powershell
 railway status
-railway logs
-railway open
-railway up
-railway domain
+railway logs --service quizcat-textual --latest --lines 100
+railway logs --service quizcat-web --latest --lines 100
+railway logs --service Postgres --latest --lines 100
 ```
 
-## Next.js Web Service
+Run local checks:
 
-The full Next.js/Postgres application under `web/` is deployed separately from
-the Textual service. Its scoped `web/railway.toml` starts `npm run start`, and
-the service reads `POSTGRES_URL` from the Railway Postgres resource.
+```powershell
+.\.venv\Scripts\python.exe -m pytest
+cd web
+npm ci
+npm run lint
+npm run build
+```
 
-- Railway service: `quizcat-web`
-- Public URL: https://quizcat-web-production.up.railway.app
-- Deployment result: `SUCCESS`
-- Seeded data: 400 questions, 1,952 choices, 8 tests, 400 test-question links
-- Verified routes: `/`, `/api/tests`, `/quiz/1`, `/stats`
+Use `pytest`, not bare `unittest discover`; the latter does not recurse into the
+current non-package `tests/` directory and can misleadingly report zero tests.
 
-## Notes
+## Database Operations
 
-- `textual-serve` is already included in `pyproject.toml` and `uv.lock`.
-- This Railway deployment serves the original Textual application.
-- The separate Next.js application under `web/` uses its own Railway service.
-- A Railway CLI upload created the current deployment. Future deployments can
-  use `railway up`, or the service can later be connected to a GitHub branch for
-  automatic deployments.
+`quizcat-web` receives `POSTGRES_URL` through a Railway reference to the
+`Postgres` service. Never commit the resolved connection string.
+
+Schema migration and seed commands are idempotent:
+
+```powershell
+cd web
+npm run db:migrate
+npm run db:seed
+```
+
+The seed reads `../ccat_full_question_bank_prompt_stimulus.csv`. Review dataset
+changes before reseeding production.
+
+## Flagged Issues
+
+### Public app has no authentication
+
+`quizcat-web` is intentionally single-user and has no authentication. Anyone
+with the public URL can start quizzes and view shared stats. Add authentication
+or make the service private before treating attempt data as private.
+
+### Railway deployments are manual uploads
+
+Both app services currently have no connected GitHub source. Deployments are
+performed with `railway up`; pushes to GitHub do not automatically deploy.
+This avoids accidental monorepo root confusion, but requires an explicit deploy
+after production changes. GitHub auto-deploy can be enabled later only after
+confirming separate root-directory settings for both services.
+
+### Dependency audit warning
+
+`npm audit` currently reports two moderate vulnerabilities through Next.js'
+bundled PostCSS dependency. The suggested automatic fix downgrades Next.js
+across a major version and should not be applied blindly. Reassess when a
+compatible Next.js release resolves the advisory.
+
+### Postgres startup warning
+
+The Railway Postgres log includes a one-time
+`collation-refresh ... Permission denied` warning during initialization. The
+database subsequently reports ready, remains healthy, and serves queries. Flag
+it for investigation if it recurs during restarts or database behavior changes.
+
+## Recovery
+
+- Do not force-push `main` unless the remote branch has been inspected and its
+  additional work preserved.
+- A local backup of the earlier deployment history exists as
+  `local-deployment-history`.
+- Railway service IDs and the Postgres volume are visible through
+  `railway service list --json`.
+- Before changing or deleting Postgres, export or back up production data.

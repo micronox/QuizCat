@@ -23,13 +23,12 @@ Railway's injected `PORT` environment variable and binds to `0.0.0.0`.
 
 ```bash
 railway login
-railway up
-railway domain
+railway up . --service quizcat-textual
+railway domain --service quizcat-textual
 ```
 
-`railway up` creates or selects a project and deploys the current directory.
-`railway domain` generates the public Railway URL after the deployment is
-healthy.
+Always pass `--service quizcat-textual` when deploying from the repository root.
+The same Railway project also contains the separate `quizcat-web` service.
 
 ## Full Next.js web application
 
