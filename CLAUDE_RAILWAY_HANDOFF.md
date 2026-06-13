@@ -65,7 +65,8 @@ railway logs --service Postgres --latest --lines 100
 Run local checks:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest
+uv sync --extra dev
+uv run pytest
 cd web
 npm ci
 npm run lint
@@ -74,6 +75,8 @@ npm run build
 
 Use `pytest`, not bare `unittest discover`; the latter does not recurse into the
 current non-package `tests/` directory and can misleadingly report zero tests.
+The Python app uses `uv` as its environment manager and is not configured as an
+installable Python package, so do not use `pip install -e .` in CI.
 
 ## Database Operations
 
