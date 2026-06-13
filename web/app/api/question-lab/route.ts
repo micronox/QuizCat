@@ -60,7 +60,8 @@ export async function POST(request: Request) {
     const message = error instanceof Error ? error.message : "Generation failed.";
     const configurationError =
       message.includes("OPENAI_API_KEY") ||
-      message.includes("QUESTION_LAB_ENABLED");
+      message.includes("QUESTION_LAB_ENABLED") ||
+      message.includes("exceeded your current quota");
     return NextResponse.json(
       { error: message },
       { status: configurationError ? 503 : 500 }
