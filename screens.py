@@ -58,6 +58,7 @@ class DashboardScreen(Screen):
             )
             with Horizontal(id="dashboard-actions"):
                 yield Button("View Stats", id="view-stats", variant="primary")
+                yield Button("Generate Test", id="generate-test", variant="warning")
                 yield Button("Start Quiz", id="start-quiz", variant="success")
         yield Footer()
 
@@ -65,11 +66,26 @@ class DashboardScreen(Screen):
         self.query_one("#exam-list", ListView).border_title = "Available Exams"
         self.query_one("#start-quiz", Button).disabled = not self._tests
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "start-quiz":
             self._start_selected_quiz()
+        elif event.button.id == "generate-test":
+            await self._generate_test()
         elif event.button.id == "view-stats":
             self.app.push_screen(StatsDashboardScreen(quiz_service=self._quiz_service))
+
+    async def _generate_test(self) -> None:
+        generated_test = self._quiz_service.create_generated_test()
+        self._tests.append(generated_test)
+        exam_list = self.query_one("#exam-list", ListView)
+        await exam_list.append(
+            ListItem(
+                Label(self._test_label(generated_test)),
+                id=f"test-{generated_test.id}",
+            )
+        )
+        exam_list.index = len(self._tests) - 1
+        self.query_one("#start-quiz", Button).disabled = False
 
     def _start_selected_quiz(self) -> None:
         if not self._tests:

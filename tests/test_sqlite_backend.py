@@ -41,6 +41,32 @@ class SQLiteBackendTests(unittest.TestCase):
         self.assertTrue(all(test.question_count == 50 for test in tests))
         self.assertTrue(all(test.time_limit_seconds == 900 for test in tests))
 
+    def test_generated_tests_are_persistent_playable_and_sequential(self) -> None:
+        first = self.service.create_generated_test(question_count=9)
+        second = self.service.create_generated_test(question_count=8)
+
+        self.assertEqual("Generated Exam 1", first.title)
+        self.assertEqual("generated", first.kind)
+        self.assertIsNone(first.source_exam)
+        self.assertEqual(9, first.question_count)
+        self.assertEqual(540, first.time_limit_seconds)
+        self.assertEqual("Generated Exam 2", second.title)
+        self.assertEqual(8, second.question_count)
+        self.assertEqual(480, second.time_limit_seconds)
+
+        playable = self.service.get_test(first.id)
+        self.assertEqual(9, len(playable.questions))
+        self.assertEqual(9, len({question.id for question in playable.questions}))
+        self.assertEqual(first, self.service.list_tests()[-2])
+        self.assertEqual(second, self.service.list_tests()[-1])
+
+    def test_generated_test_rejects_invalid_question_count(self) -> None:
+        for invalid_count in (0, 401):
+            with self.subTest(question_count=invalid_count), self.assertRaises(
+                ValueError
+            ):
+                self.service.create_generated_test(question_count=invalid_count)
+
     def test_questions_do_not_store_redundant_image_filename_column(self) -> None:
         with closing(sqlite3.connect(self.db_path)) as connection:
             columns = [

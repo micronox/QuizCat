@@ -5,6 +5,10 @@
 - Full Next.js web app: https://quizcat-web-production.up.railway.app
 - Textual browser app: https://quizcat-textual-production.up.railway.app
 
+The Textual dashboard can also create persistent generated practice exams.
+Each generated exam selects 8-10 unique questions from the vetted question
+bank and gives one minute per question.
+
 ## Serve in a browser
 
 Install dependencies and start the Textual web server:

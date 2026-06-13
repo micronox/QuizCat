@@ -46,6 +46,9 @@ class QuizService:
     def list_tests(self) -> list[TestSummary]:
         return self._storage.list_tests()
 
+    def create_generated_test(self, question_count: int | None = None) -> TestSummary:
+        return self._storage.create_generated_test(question_count)
+
     def get_test(self, test_id: int) -> TestDefinition:
         return self._storage.get_test(test_id)
 

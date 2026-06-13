@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import random
 import sqlite3
 from collections import defaultdict
 from dataclasses import dataclass
@@ -269,6 +270,58 @@ class QuizStorage:
             """
         ).fetchall()
         return [_test_summary_from_row(row) for row in rows]
+
+    def create_generated_test(self, question_count: int | None = None) -> TestSummary:
+        """Create a playable practice test from unique random bank questions."""
+        available_count = int(
+            self.connection.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
+        )
+        if available_count == 0:
+            raise ValueError("Cannot generate a test without questions")
+
+        selected_count = (
+            random.randint(8, 10) if question_count is None else question_count
+        )
+        if selected_count < 1 or selected_count > available_count:
+            raise ValueError(
+                f"question_count must be between 1 and {available_count}"
+            )
+
+        question_ids = [
+            int(row["id"])
+            for row in self.connection.execute(
+                "SELECT id FROM questions ORDER BY RANDOM() LIMIT ?",
+                (selected_count,),
+            ).fetchall()
+        ]
+        generated_number = int(
+            self.connection.execute(
+                "SELECT COUNT(*) FROM tests WHERE kind = 'generated'"
+            ).fetchone()[0]
+        ) + 1
+
+        with self.connection:
+            cursor = self.connection.execute(
+                """
+                INSERT INTO tests (
+                    title,
+                    kind,
+                    source_exam,
+                    question_count,
+                    time_limit_seconds
+                )
+                VALUES (?, 'generated', NULL, ?, ?)
+                """,
+                (
+                    f"Generated Exam {generated_number}",
+                    selected_count,
+                    selected_count * 60,
+                ),
+            )
+            test_id = int(cursor.lastrowid)
+            _replace_test_questions(self.connection, test_id, question_ids)
+
+        return next(test for test in self.list_tests() if test.id == test_id)
 
     def get_test(self, test_id: int) -> TestDefinition:
         test_row = self.connection.execute(
