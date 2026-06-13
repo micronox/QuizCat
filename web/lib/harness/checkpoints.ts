@@ -25,8 +25,10 @@ export function runCheckpoints(
     (choice) => choice.label.trim().toUpperCase() === correctLabel
   );
   const similarity = highestSimilarity(
-    `${candidate.stimulus} ${candidate.prompt}`,
-    examples.map((example) => `${example.stimulus} ${example.prompt}`)
+    similarityText(candidate.stimulus, candidate.prompt),
+    examples.map((example) =>
+      similarityText(example.stimulus, example.prompt)
+    )
   );
 
   const checkpoints: HarnessCheckpoint[] = [
@@ -152,13 +154,17 @@ function highestSimilarity(text: string, examples: string[]): number {
   );
 }
 
+function similarityText(stimulus: string, prompt: string): string {
+  return stimulus.trim() || prompt;
+}
+
 function tokens(text: string): Set<string> {
   return new Set(
     text
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, " ")
       .split(/\s+/)
-      .filter((token) => token.length > 2)
+      .filter((token) => /^\d+$/.test(token) || token.length > 2)
   );
 }
 

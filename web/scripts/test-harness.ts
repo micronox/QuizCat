@@ -66,4 +66,20 @@ assert.equal(
   false
 );
 
+const genericPromptExample = {
+  ...example,
+  prompt: "What number comes next?",
+  stimulus: "1, 3, 5, 7",
+};
+const originalSequence = runCheckpoints(
+  { ...candidate, prompt: "What number comes next?" },
+  "Number Series",
+  [genericPromptExample]
+);
+assert.equal(
+  originalSequence.find((checkpoint) => checkpoint.name === "Similarity")?.passed,
+  true,
+  JSON.stringify(originalSequence)
+);
+
 console.log("Harness deterministic checks passed.");
