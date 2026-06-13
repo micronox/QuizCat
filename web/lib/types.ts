@@ -100,3 +100,39 @@ export interface AttemptSummary {
   correctCount: number;
   totalQuestions: number;
 }
+
+export interface CandidateChoice {
+  label: string;
+  text: string;
+}
+
+export interface CandidateQuestion {
+  category: string;
+  questionType: string;
+  prompt: string;
+  stimulus: string;
+  choices: CandidateChoice[];
+  correctChoiceLabel: string;
+  explanation: string;
+  verificationExpression: string;
+}
+
+export interface HarnessCheckpoint {
+  name: string;
+  passed: boolean;
+  detail: string;
+}
+
+export interface HarnessAttempt {
+  revision: number;
+  candidate: CandidateQuestion;
+  checkpoints: HarnessCheckpoint[];
+}
+
+export interface HarnessResult {
+  accepted: boolean;
+  model: string;
+  attempts: HarnessAttempt[];
+  candidate: CandidateQuestion;
+  checkpoints: HarnessCheckpoint[];
+}

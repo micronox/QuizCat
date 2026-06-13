@@ -96,6 +96,35 @@ export async function getQuestion(questionId: number): Promise<Question | null> 
   return questionFromRow(row, choicesByQuestion.get(questionId) ?? []);
 }
 
+export async function listQuestionTypes(): Promise<string[]> {
+  const { rows } = await getPool().query(
+    `SELECT DISTINCT question_type
+     FROM questions
+     WHERE question_type <> ''
+     ORDER BY question_type`
+  );
+  return rows.map((row) => String(row.question_type));
+}
+
+export async function getQuestionExamples(
+  questionType: string,
+  limit = 5
+): Promise<Question[]> {
+  const questionResult = await getPool().query(
+    `SELECT *
+     FROM questions
+     WHERE question_type = $1
+     ORDER BY id
+     LIMIT $2`,
+    [questionType, Math.min(Math.max(limit, 1), 10)]
+  );
+  const questionIds = questionResult.rows.map((row) => row.id as number);
+  const choicesByQuestion = await choicesByQuestionId(questionIds);
+  return questionResult.rows.map((row) =>
+    questionFromRow(row, choicesByQuestion.get(row.id) ?? [])
+  );
+}
+
 export async function listFinishedAttempts(): Promise<AttemptSummary[]> {
   const { rows } = await getPool().query(
     `SELECT a.id AS attempt_id,

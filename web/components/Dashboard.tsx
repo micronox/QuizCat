@@ -54,6 +54,12 @@ export default function Dashboard({ tests }: { tests: TestSummary[] }) {
 
       <div className="flex gap-3">
         <Link
+          href="/question-lab"
+          className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+        >
+          Question Lab
+        </Link>
+        <Link
           href="/stats"
           className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
         >

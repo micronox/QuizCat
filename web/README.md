@@ -57,12 +57,32 @@ npm run dev
 
 Open http://localhost:3000.
 
-## 6. Images
+## 6. Question Lab (LLM harness)
+
+Question Lab turns the notebook generation experiment into a governed,
+review-only web workflow. The LLM creates a candidate; deterministic
+checkpoints validate its schema, single answer, explanation, category,
+similarity, safety, export readiness, and arithmetic where applicable.
+Failed candidates receive structured feedback for up to two revisions.
+Candidates are never written to the production question bank automatically.
+
+Set these server-only variables to unlock it:
+
+```bash
+OPENAI_API_KEY="..."
+OPENAI_MODEL="gpt-4o-mini"
+QUESTION_LAB_ENABLED="true"
+```
+
+Keep `QUESTION_LAB_ENABLED=false` on public deployments without
+authentication to prevent untrusted visitors from spending model credits.
+
+## 7. Images
 
 Question images live in `public/images/`, copied from the Python app's
 `images/` directory. They're served directly at `/images/<filename>`.
 
-## 7. Deploy to Railway
+## 8. Deploy to Railway
 
 The included `railway.toml` builds and starts the Next.js production server.
 Deploy `web/` as the service root and provide `POSTGRES_URL`:
@@ -82,7 +102,7 @@ Current production data contains 400 questions across 8 sample exams.
 Always pass `--service quizcat-web` and deploy `web/` with `--path-as-root`.
 Deploying the repository root to this service would start the wrong application.
 
-## 8. Deploy to Vercel
+## 9. Deploy to Vercel
 
 1. Push this repo to GitHub (or your git provider of choice).
 2. Import the project in Vercel, set the **root directory** to `web/` if
