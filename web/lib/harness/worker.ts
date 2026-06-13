@@ -32,6 +32,7 @@ export function questionLabStatus() {
   return {
     configured: hasKey,
     enabled: hasKey && enabled,
+    accessProtected: Boolean(process.env.QUESTION_LAB_ACCESS_TOKEN),
     model: process.env.OPENAI_MODEL ?? DEFAULT_MODEL,
   };
 }
@@ -44,7 +45,11 @@ export async function generateGovernedQuestion(
   if (!status.configured) throw new Error("OPENAI_API_KEY is not configured.");
   if (!status.enabled) throw new Error("QUESTION_LAB_ENABLED is not true.");
 
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+    timeout: 45_000,
+    maxRetries: 1,
+  });
   const attempts: HarnessAttempt[] = [];
   let feedback: HarnessCheckpoint[] = [];
   let previous: CandidateQuestion | null = null;
@@ -52,6 +57,7 @@ export async function generateGovernedQuestion(
   for (let revision = 0; revision <= MAX_REVISIONS; revision += 1) {
     const response = await client.responses.parse({
       model: status.model,
+      max_output_tokens: 1_200,
       input: [
         {
           role: "system",

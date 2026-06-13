@@ -72,10 +72,13 @@ Set these server-only variables to unlock it:
 OPENAI_API_KEY="..."
 OPENAI_MODEL="gpt-4o-mini"
 QUESTION_LAB_ENABLED="true"
+QUESTION_LAB_ACCESS_TOKEN="a-long-random-secret"
 ```
 
-Keep `QUESTION_LAB_ENABLED=false` on public deployments without
-authentication to prevent untrusted visitors from spending model credits.
+Set `QUESTION_LAB_ACCESS_TOKEN` on public deployments. The API compares it
+server-side and also limits each client to three generation requests per five
+minutes. Model calls have a 45-second timeout, one retry, and a bounded output.
+Keep `QUESTION_LAB_ENABLED=false` until both secrets are configured.
 
 ## 7. Images
 

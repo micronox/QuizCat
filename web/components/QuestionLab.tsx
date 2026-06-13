@@ -6,6 +6,7 @@ import type { HarnessResult } from "@/lib/types";
 interface LabStatus {
   configured: boolean;
   enabled: boolean;
+  accessProtected: boolean;
   model: string;
   questionTypes: string[];
 }
@@ -13,6 +14,7 @@ interface LabStatus {
 export default function QuestionLab() {
   const [status, setStatus] = useState<LabStatus | null>(null);
   const [questionType, setQuestionType] = useState("");
+  const [accessToken, setAccessToken] = useState("");
   const [result, setResult] = useState<HarnessResult | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,7 +36,10 @@ export default function QuestionLab() {
     try {
       const response = await fetch("/api/question-lab", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { "x-question-lab-token": accessToken } : {}),
+        },
         body: JSON.stringify({ questionType, exampleCount: 5 }),
       });
       const body = await response.json();
@@ -77,6 +82,26 @@ export default function QuestionLab() {
           </p>
         )}
 
+        {status.enabled && status.accessProtected && (
+          <>
+            <label
+              className="mt-5 block text-sm font-medium"
+              htmlFor="access-token"
+            >
+              Lab access token
+            </label>
+            <input
+              id="access-token"
+              type="password"
+              value={accessToken}
+              autoComplete="off"
+              onChange={(event) => setAccessToken(event.target.value)}
+              className="mt-2 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700"
+              placeholder="Enter the server-configured access token"
+            />
+          </>
+        )}
+
         <label className="mt-5 block text-sm font-medium" htmlFor="question-type">
           Question type
         </label>
@@ -93,7 +118,12 @@ export default function QuestionLab() {
           </select>
           <button
             type="button"
-            disabled={!status.enabled || !questionType || loading}
+            disabled={
+              !status.enabled ||
+              !questionType ||
+              loading ||
+              (status.accessProtected && !accessToken)
+            }
             onClick={generate}
             className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500"
           >
